@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-MODULE = dut
+MODULE =dut
 VSRC = $(wildcard ./vsrc/*.v ./vsrc/*.sv)
 INC = $(wildcard ./csrc/*.h)
 SRC_ALL = $(wildcard ./csrc/*.cpp ./csrc/*.c)
