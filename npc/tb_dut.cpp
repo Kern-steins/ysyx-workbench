@@ -6,7 +6,7 @@
 #include <verilated_vcd_c.h>
 
 #include "Vdut.h"
-#include "Vdut___024unit.h"
+//#include "Vdut___024unit.h"
 //TIME_REFER表示每次跑基数，1000_000为us
 #define TIME_REFER 1000
 //MAX_TIME表示要跑多少，例如100就是100us
