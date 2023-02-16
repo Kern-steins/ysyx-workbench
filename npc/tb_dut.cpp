@@ -22,14 +22,17 @@ class dut_in_tx
 public:
 	uint32_t in_1;
 	uint32_t in_2;
-	uint32_t in_3;
-	uint32_t in_4;
 	enum operation_t {
-		chose_in_1 = 0,
-		chose_in_2 = 1,
-		chose_in_3 = 2,
-		chose_in_4 = 3
+		op_add  = 0,
+		op_sub  = 1,
+		op_not  = 2,
+		op_and  = 3,
+		op_or   = 4,
+		op_xor  = 5,
+		op_cpr  = 6,
+		op_eq   = 7,
 	}op;
+    uint32_t in_valid;
 
 };
 
@@ -37,6 +40,9 @@ class dut_out_tx
 {
 public:
 	uint32_t out_1;
+    uint32_t zero;
+    uint32_t out_valid;
+    uint32_t overflow;
 
 };
 
@@ -68,39 +74,73 @@ public:
 		// 检测预期输出和实际输出时候相符
 		// 下方函数功能为：将in_monitor和out_monitor的值相比较，看是否符合预期
 		switch(in->op){
-			case dut_in_tx::chose_in_1 :
-				if (in->in_1 != tx->out_1){
-                    std::cout << std::endl;
-                    std::cout << "MUX: channel_1 mismatch" << std::endl;
-                    std::cout << "  Expected: " <<  in->in_1
-                    << "  Actual: " << tx->out_1 << std::endl;
-                    std::cout << "  Simtime: " << sim_time << std::endl;
-			}
-			case dut_in_tx::chose_in_2 :
-				if (in->in_2 != tx->out_1){
-                    std::cout << std::endl;
-                    std::cout << "MUX: channel_2 mismatch" << std::endl;
-                    std::cout << "  Expected: " << in->in_2
-                    << "  Actual: " << tx->out_1 << std::endl;
-                    std::cout << "  Simtime: " << sim_time << std::endl;
-			}
-			case dut_in_tx::chose_in_3 :
-				if (in->in_3 != tx->out_1){
-                    std::cout << std::endl;
-                    std::cout << "MUX: channel_3 mismatch" << std::endl;
-                    std::cout << "  Expected: " << in->in_3
-                    << "  Actual: " << tx->out_1 << std::endl;
-                    std::cout << "  Simtime: " << sim_time << std::endl;
-			}
-			case dut_in_tx::chose_in_4 :
-				if (in->in_4 != tx->out_1){
-                    std::cout << std::endl;
-                    std::cout << "MUX: channel_4 mismatch" << std::endl;
-                    std::cout << "  Expected: " << in->in_4
-                    << "  Actual: " << tx->out_1 << std::endl;
-                    std::cout << "  Simtime: " << sim_time << std::endl;
-			}
-		}
+            if (out_valid) {
+                case dut_in_tx::op_add :
+    				if (in->in_1 + in->in_2 != tx->out_1){
+                        std::cout << std::endl;
+                        std::cout << "ALU: add mismatch" << std::endl;
+                        std::cout << "  Expected: " <<  in->in_1 + in->in_2
+                        << "  Actual: " << tx->out_1 << std::endl;
+                        std::cout << "  Simtime: " << sim_time << std::endl;
+    			}
+    			case dut_in_tx::op_sub :
+    				if (in->in_1 - in->in_2 != tx->out_1){
+                        std::cout << std::endl;
+                        std::cout << "ALU: sub mismatch" << std::endl;
+                        std::cout << "  Expected: " << in->in_1 - in->in_2
+                        << "  Actual: " << tx->out_1 << std::endl;
+                        std::cout << "  Simtime: " << sim_time << std::endl;
+    			}
+    			case dut_in_tx::op_not :
+    				if (~(in->in_1) != tx->out_1){
+                        std::cout << std::endl;
+                        std::cout << "ALU: ~in_1 mismatch" << std::endl;
+                        std::cout << "  Expected: " << (~in->in_1)
+                        << "  Actual: " << tx->out_1 << std::endl;
+                        std::cout << "  Simtime: " << sim_time << std::endl;
+    			}
+    			case dut_in_tx::op_and :
+    				if ( (in->in_1 & in->in_2)  != tx->out_1){
+                        std::cout << std::endl;
+                        std::cout << "ALU: in_1 & in_2 mismatch" << std::endl;
+                        std::cout << "  Expected: " <<( in->in_1 & in->in_2)
+                        << "  Actual: " << tx->out_1 << std::endl;
+                        std::cout << "  Simtime: " << sim_time << std::endl;
+    			}
+    			case dut_in_tx::op_or :
+    				if ( (in->in_1 | in->in_2) != tx->out_1){
+                        std::cout << std::endl;
+                        std::cout << "ALU: in_1|in_2  mismatch" << std::endl;
+                        std::cout << "  Expected: " << (in->in_1 | in->in_2)
+                        << "  Actual: " << tx->out_1 << std::endl;
+                        std::cout << "  Simtime: " << sim_time << std::endl;
+    			}
+    			case dut_in_tx::op_xor :
+    				if ( (in->in_1 ^ in->in_2) != tx->out_1){
+                        std::cout << std::endl;
+                        std::cout << "ALU: in_1^in_2  mismatch" << std::endl;
+                        std::cout << "  Expected: " << (in->in_1 ^ in->in_2)
+                        << "  Actual: " << tx->out_1 << std::endl;
+                        std::cout << "  Simtime: " << sim_time << std::endl;
+    			}
+    			case dut_in_tx::op_cpr :
+    				if ( (in->in_1 > in->in_2) != tx->out_1){
+                        std::cout << std::endl;
+                        std::cout << "ALU: in_1 > in_2 mismatch" << std::endl;
+                        std::cout << "  Expected: " << (in->in_1 > in->in_2)
+                        << "  Actual: " << tx->out_1 << std::endl;
+                        std::cout << "  Simtime: " << sim_time << std::endl;
+    			}
+    			case dut_in_tx::op_eq :
+    				if ( (in->in_1 == in->in_2) != tx->out_1){
+                        std::cout << std::endl;
+                        std::cout << "ALU: in_1 == in_2 mismatch" << std::endl;
+                        std::cout << "  Expected: " << (in->in_1 == in->in_2)
+                        << "  Actual: " << tx->out_1 << std::endl;
+                        std::cout << "  Simtime: " << sim_time << std::endl;
+    			}
+            }
+        }
     	delete in;
 		delete tx;
 	}
@@ -126,8 +166,7 @@ public:
 		if (tx != NULL){
 			dut->in_1 = tx->in_1;
 			dut->in_2 = tx->in_2;
-			dut->in_3 = tx->in_3;
-			dut->in_4 = tx->in_4;
+            dut->in_valid = tx->in_valid;
 			dut->op = tx->op;
 		}		
 		delete tx;
@@ -156,8 +195,7 @@ public:
 		tx->op = dut_in_tx::operation_t(dut->op);
 		tx->in_1 = dut->in_1;
 		tx->in_2 = dut->in_2;
-		tx->in_3 = dut->in_3;
-		tx->in_4 = dut->in_4;
+        tx->in_valid = dut->in_valid;
 	
 		scb->write_in(tx);
 	}
@@ -183,6 +221,9 @@ public:
 		// 下方函数功能为：将out_FIFO输入赋值到Monitor中
 		dut_out_tx *tx = new dut_out_tx();
 		tx->out_1 = dut->out_1;
+        tx->out_valid = dut->out_valid;
+        tx->overflow = dut->overflow;
+        tx->zero = dut->zero;
 
 		scb->write_out(tx);
 	}
@@ -195,9 +236,8 @@ void dut_reset(Vdut* dut, vluint64_t &sim_time)
        dut->rst = 1;
        dut->in_1 = 0;
        dut->in_2 = 0;
-       dut->in_3 = 0;
-       dut->in_4 = 0;
        dut->op = 0;
+       dut->in_valid = 0;
     }
     
 }
@@ -205,11 +245,10 @@ void dut_reset(Vdut* dut, vluint64_t &sim_time)
 dut_in_tx* rnd_in_tx(){
 	if ( rand()%5 == 0 ){
 		dut_in_tx *tx = new dut_in_tx();
-		tx->op = dut_in_tx::operation_t( rand()%4 );
-		tx->in_1 = rand() % 4;
-		tx->in_2 = rand() % 4;
-		tx->in_3 = rand() % 4;
-		tx->in_4 = rand() % 4;
+		tx->op = dut_in_tx::operation_t( rand()% 8);
+		tx->in_1 = rand() % 0xf;
+		tx->in_2 = rand() % 0xf;
+        tx->in_valid = rand() % 2;
 		return tx;
 	} else return NULL;
 }
