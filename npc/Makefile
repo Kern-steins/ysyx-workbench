@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-MODULE =dut
+MODULE =top
 VSRC = $(shell find $(abspath ./vsrc) -name "*.v" -o -name "*.sv")
 INC = $(wildcard ./csrc/*.h)
 SRC_ALL = $(wildcard ./csrc/*.cpp ./csrc/*.c)
@@ -26,8 +26,6 @@ LDFLAGS += -lSDL2 -lSDL2_image
 
 default:$(BIN)
 
-echo:
-	@echo $(VSRC)
 sim: waveform.vcd
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 	@echo "### WAVES ###"	
@@ -82,6 +80,7 @@ else
 	@rm $(TRASH)
 	@echo "clean done"
 endif
+
 
 include ../Makefile
 

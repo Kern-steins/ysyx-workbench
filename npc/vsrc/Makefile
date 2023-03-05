@@ -3,7 +3,10 @@ SRC_MAKE = $(wildcard Makefile)
 SRC = $(filter-out $(SRC_MAKE), $(SRC_ALL))
 PWD = $(shell pwd)
 
-.PHONY: copy
 copy:$(SRC)
-	@cp $(SRC) ~/steins_verilog/
+	cp $(SRC) ~/ysyx-workbench/nvboard/steins/vsrc
 
+echo:
+	@echo $(SRC_ALL)
+
+.PHONY: copy echo

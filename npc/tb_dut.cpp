@@ -10,7 +10,7 @@
 //TIME_REFER表示每次跑基数，1000_000为us
 #define TIME_REFER 1000
 //MAX_TIME表示要跑多少，例如100就是100us
-#define MAX_TIME 1 
+#define MAX_TIME 1
 #define MAX_SIM_TIME ((MAX_TIME)*(TIME_REFER)) 
 #define VERIF_START_TIME 7
 
@@ -20,31 +20,47 @@ vluint64_t posedge_cnt = 0;
 class dut_in_tx
 {
 public:
-	uint32_t in_1;
-	uint32_t in_2;
-	enum operation_t {
-		op_add  = 0,
-		op_sub  = 1,
-		op_not  = 2,
-		op_and  = 3,
-		op_or   = 4,
-		op_xor  = 5,
-		op_cpr  = 6,
-		op_eq   = 7,
-	}op;
-    uint32_t in_valid;
+	uint32_t in_clk;
+	//3_gpio
+	uint32_t gpio_in_1;
+	uint32_t gpio_in_2;
+	uint32_t gpio_in_3;
+	uint32_t exp_res();
 
 };
+
+uint32_t dut_in_tx::exp_res(){
+
+	return 0;
+}
+
 
 class dut_out_tx
 {
 public:
-	uint32_t out_1;
-    uint32_t zero;
-    uint32_t out_valid;
-    uint32_t overflow;
+	uint32_t gpio_out_1;
+	uint32_t gpio_out_2;
+	uint32_t led;
+	uint32_t VGA_R;
+	uint32_t VGA_G;
+	uint32_t VGA_B;
+	uint32_t seg0;
+	uint32_t seg1;
+	uint32_t seg2;
+	uint32_t seg3;
+	uint32_t seg4;
+	uint32_t seg5;
+	uint32_t seg6;
+	uint32_t seg7;
+	uint32_t rel_res();
 
 };
+
+uint32_t dut_out_tx::rel_res(){
+
+	return 0;
+}
+
 
 class dut_scb
 {
@@ -69,79 +85,14 @@ public:
 
 		dut_in_tx *in;
 		in = in_fifo.front();
-		in_fifo.pop_front();
+		in_fifo.pop_front(); 
 
-		// 检测预期输出和实际输出时候相符
-		// 下方函数功能为：将in_monitor和out_monitor的值相比较，看是否符合预期
-		switch(in->op){
-            if (out_valid) {
-                case dut_in_tx::op_add :
-    				if (in->in_1 + in->in_2 != tx->out_1){
-                        std::cout << std::endl;
-                        std::cout << "ALU: add mismatch" << std::endl;
-                        std::cout << "  Expected: " <<  in->in_1 + in->in_2
-                        << "  Actual: " << tx->out_1 << std::endl;
-                        std::cout << "  Simtime: " << sim_time << std::endl;
-    			}
-    			case dut_in_tx::op_sub :
-    				if (in->in_1 - in->in_2 != tx->out_1){
-                        std::cout << std::endl;
-                        std::cout << "ALU: sub mismatch" << std::endl;
-                        std::cout << "  Expected: " << in->in_1 - in->in_2
-                        << "  Actual: " << tx->out_1 << std::endl;
-                        std::cout << "  Simtime: " << sim_time << std::endl;
-    			}
-    			case dut_in_tx::op_not :
-    				if (~(in->in_1) != tx->out_1){
-                        std::cout << std::endl;
-                        std::cout << "ALU: ~in_1 mismatch" << std::endl;
-                        std::cout << "  Expected: " << (~in->in_1)
-                        << "  Actual: " << tx->out_1 << std::endl;
-                        std::cout << "  Simtime: " << sim_time << std::endl;
-    			}
-    			case dut_in_tx::op_and :
-    				if ( (in->in_1 & in->in_2)  != tx->out_1){
-                        std::cout << std::endl;
-                        std::cout << "ALU: in_1 & in_2 mismatch" << std::endl;
-                        std::cout << "  Expected: " <<( in->in_1 & in->in_2)
-                        << "  Actual: " << tx->out_1 << std::endl;
-                        std::cout << "  Simtime: " << sim_time << std::endl;
-    			}
-    			case dut_in_tx::op_or :
-    				if ( (in->in_1 | in->in_2) != tx->out_1){
-                        std::cout << std::endl;
-                        std::cout << "ALU: in_1|in_2  mismatch" << std::endl;
-                        std::cout << "  Expected: " << (in->in_1 | in->in_2)
-                        << "  Actual: " << tx->out_1 << std::endl;
-                        std::cout << "  Simtime: " << sim_time << std::endl;
-    			}
-    			case dut_in_tx::op_xor :
-    				if ( (in->in_1 ^ in->in_2) != tx->out_1){
-                        std::cout << std::endl;
-                        std::cout << "ALU: in_1^in_2  mismatch" << std::endl;
-                        std::cout << "  Expected: " << (in->in_1 ^ in->in_2)
-                        << "  Actual: " << tx->out_1 << std::endl;
-                        std::cout << "  Simtime: " << sim_time << std::endl;
-    			}
-    			case dut_in_tx::op_cpr :
-    				if ( (in->in_1 > in->in_2) != tx->out_1){
-                        std::cout << std::endl;
-                        std::cout << "ALU: in_1 > in_2 mismatch" << std::endl;
-                        std::cout << "  Expected: " << (in->in_1 > in->in_2)
-                        << "  Actual: " << tx->out_1 << std::endl;
-                        std::cout << "  Simtime: " << sim_time << std::endl;
-    			}
-    			case dut_in_tx::op_eq :
-    				if ( (in->in_1 == in->in_2) != tx->out_1){
-                        std::cout << std::endl;
-                        std::cout << "ALU: in_1 == in_2 mismatch" << std::endl;
-                        std::cout << "  Expected: " << (in->in_1 == in->in_2)
-                        << "  Actual: " << tx->out_1 << std::endl;
-                        std::cout << "  Simtime: " << sim_time << std::endl;
-    			}
-            }
-        }
-    	delete in;
+		if (in->exp_res() != tx->rel_res()){
+			/* code */
+		}
+
+
+   		delete in;
 		delete tx;
 	}
 };
@@ -159,15 +110,18 @@ public:
 
 	void drive(dut_in_tx *tx)
 	{
+        dut->in_valid = 0;
+
 		// 默认为输入为无效输入
 		// 当Transacter给出一个Transaction且操作数并不为空时
 		// 认为当前输入为有效输入，in_valid置1
 		// 下方函数功能为：将FIFO输入与实例DUT的接口连接
 		if (tx != NULL){
-			dut->in_1 = tx->in_1;
-			dut->in_2 = tx->in_2;
-            dut->in_valid = tx->in_valid;
-			dut->op = tx->op;
+			dut->in_clk = tx->in_clk;
+			dut->gpio_in_1 = tx->gpio_in_1;
+			dut->gpio_in_2 = tx->gpio_in_2;
+			dut->gpio_in_3 = tx->gpio_in_3;
+			dut->in_valid = 1;
 		}		
 		delete tx;
 	}
@@ -188,16 +142,18 @@ public:
 
 	void monitor()
 	{
-		// 当驱动函数认为接收到了有效输入后, 创建一个transaction
-		// 并将驱动函数的输出存储并传递给scoreboard
-		// 下方函数功能为：将in_FIFO输入赋值到Monitor中
-		dut_in_tx *tx = new dut_in_tx();
-		tx->op = dut_in_tx::operation_t(dut->op);
-		tx->in_1 = dut->in_1;
-		tx->in_2 = dut->in_2;
-        tx->in_valid = dut->in_valid;
-	
-		scb->write_in(tx);
+        if (dut->in_valid == 1){
+    		// 当驱动函数认为接收到了有效输入后, 创建一个transaction
+    		// 并将驱动函数的输出存储并传递给scoreboard
+    		// 下方函数功能为：将in_FIFO输入赋值到Monitor中
+    		dut_in_tx *tx = new dut_in_tx();
+    		tx->in_clk = dut->in_clk;
+    		tx->gpio_in_1 = dut->gpio_in_1;
+    		tx->gpio_in_2 = dut->gpio_in_2;
+    		tx->gpio_in_3 = dut->gpio_in_3;
+
+    		scb->write_in(tx);
+	    }
 	}
 };
 
@@ -216,16 +172,28 @@ public:
 
 	void monitor()
 	{
-		// 当驱动函数认为接收到了有效输出后, 创建一个transaction
-		// 并将驱动函数的输出存储并传递给scoreboard
-		// 下方函数功能为：将out_FIFO输入赋值到Monitor中
-		dut_out_tx *tx = new dut_out_tx();
-		tx->out_1 = dut->out_1;
-        tx->out_valid = dut->out_valid;
-        tx->overflow = dut->overflow;
-        tx->zero = dut->zero;
+        if(dut->out_valid == 1){
+	    	// 当驱动函数认为接收到了有效输出后, 创建一个transaction
+	    	// 并将驱动函数的输出存储并传递给scoreboard
+	    	// 下方函数功能为：将out_FIFO输入赋值到Monitor中
+	    	dut_out_tx *tx = new dut_out_tx();
+	    	tx->gpio_out_1 = dut->gpio_out_1;
+	    	tx->gpio_out_2 = dut->gpio_out_2;
+	    	tx->led	= dut->led;
+	    	tx->VGA_R = dut->VGA_R;
+	    	tx->VGA_G = dut->VGA_G;
+	    	tx->VGA_B = dut->VGA_B;
+	    	tx->seg0 = dut->seg0;
+	    	tx->seg1 = dut->seg1;
+	    	tx->seg2 = dut->seg2;
+	    	tx->seg3 = dut->seg3;
+	    	tx->seg4 = dut->seg4;
+	    	tx->seg5 = dut->seg5;
+	    	tx->seg6 = dut->seg6;
+	    	tx->seg7 = dut->seg7;
 
-		scb->write_out(tx);
+	    	scb->write_out(tx);
+        }
 	}
 };
 
@@ -234,21 +202,22 @@ void dut_reset(Vdut* dut, vluint64_t &sim_time)
     dut->rst = 0;
     if (sim_time > VERIF_START_TIME && sim_time < VERIF_START_TIME + 3){
        dut->rst = 1;
-       dut->in_1 = 0;
-       dut->in_2 = 0;
-       dut->op = 0;
        dut->in_valid = 0;
+       dut->in_clk = 0;
+       dut->gpio_in_1 = 0;
+       dut->gpio_in_2 = 0;
+       dut->gpio_in_3 = 0;
+
     }
     
 }
 
 dut_in_tx* rnd_in_tx(){
-	if ( rand()%5 == 0 ){
+	if ( rand()%10 == 0 ){
 		dut_in_tx *tx = new dut_in_tx();
-		tx->op = dut_in_tx::operation_t( rand()% 8);
-		tx->in_1 = rand() % 0xf;
-		tx->in_2 = rand() % 0xf;
-        tx->in_valid = rand() % 2;
+
+
+
 		return tx;
 	} else return NULL;
 }
@@ -297,6 +266,7 @@ int main(int argc, char const *argv[])
 				// Monitor the output interface
 				outMon->monitor();
 			}
+            posedge_cnt++;
 		}
 		// end of positive edge processing
 
