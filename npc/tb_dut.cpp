@@ -7,11 +7,11 @@
 
 #include "Vtop.h"
 #include "Vtop___024unit.h"
-//TIME_REFER表示每次跑基数，1000_000为us
+// TIME_REFER表示每次跑基数，1000_000为us
 #define TIME_REFER 1000
-//MAX_TIME表示要跑多少，例如100就是100us
+// MAX_TIME表示要跑多少，例如100就是100us
 #define MAX_TIME 1
-#define MAX_SIM_TIME ((MAX_TIME)*(TIME_REFER)) 
+#define MAX_SIM_TIME ((MAX_TIME) * (TIME_REFER))
 #define VERIF_START_TIME 7
 
 vluint64_t sim_time = 0;
@@ -21,19 +21,34 @@ class dut_in_tx
 {
 public:
 	uint32_t in_clk;
-	//3_gpio
+	// 3_gpio
 	uint32_t gpio_in_1;
 	uint32_t gpio_in_2;
 	uint32_t gpio_in_3;
 	uint32_t exp_res();
-
 };
 
-uint32_t dut_in_tx::exp_res(){
+class in_buf ::public dut_in_tx
+{
+public:
+	vluint64_t data_count;
+	vluint64_t time_count;
+
+	in_buf()
+	{
+		this->data_count = 0;
+		this->time_count = 0;
+	}
+	~in_buf()
+	{
+	}
+}
+
+uint32_t dut_in_tx::exp_res()
+{
 
 	return 0;
 }
-
 
 class dut_out_tx
 {
@@ -53,14 +68,13 @@ public:
 	uint32_t seg6;
 	uint32_t seg7;
 	uint32_t rel_res();
-
 };
 
-uint32_t dut_out_tx::rel_res(){
+uint32_t dut_out_tx::rel_res()
+{
 
 	return 0;
 }
-
 
 class dut_scb
 {
@@ -85,14 +99,14 @@ public:
 
 		dut_in_tx *in;
 		in = in_fifo.front();
-		in_fifo.pop_front(); 
+		in_fifo.pop_front();
 
-		if (in->exp_res() != tx->rel_res()){
+		if (in->exp_res() != tx->rel_res())
+		{
 			/* code */
 		}
 
-
-   		delete in;
+		delete in;
 		delete tx;
 	}
 };
@@ -101,6 +115,7 @@ class dut_in_drv
 {
 private:
 	Vtop *top;
+	dut_in_tx *buf;
 
 public:
 	dut_in_drv(Vtop *top)
@@ -110,19 +125,44 @@ public:
 
 	void drive(dut_in_tx *tx)
 	{
-        top->in_valid = 0;
+		top->in_valid = 0;
 
 		// 默认为输入为无效输入
 		// 当Transacter给出一个Transaction且操作数并不为空时
 		// 认为当前输入为有效输入，in_valid置1
 		// 下方函数功能为：将FIFO输入与实例top的接口连接
-		if (tx != NULL){
-			top->in_clk = tx->in_clk;
-			top->gpio_in_1 = tx->gpio_in_1;
-			top->gpio_in_2 = tx->gpio_in_2;
-			top->gpio_in_3 = tx->gpio_in_3;
+		if (tx != NULL && buf == NULL)
+		{
+			buf = new in_buf();
+			buf->gpio_in_1 = tx->gpio_in_1;
+		}
+		if (buf != NULL)
+		{
+			if (buf->time_count++ == 10)
+			{
+				if (top->in_clk == 0)
+				{
+					if (buf->data_count < 11)
+					{
+						if (buf->data_count == 0)
+						{
+							top->gpio_in_1 = 0;
+						}
+
+						if (buf->data_count != 0 && buf->data_count < 9)
+						{
+							top->gpio_in_1 = buf->gpio_in_1 % 2;
+							buf->gpio_in_1 = buf->gpio_in_1 >> 1;
+						}
+
+						buf->data_count++;
+					}
+				}
+				top->in_clk ^= 1;
+			}
 			top->in_valid = 1;
-		}		
+		}
+
 		delete tx;
 	}
 };
@@ -142,18 +182,19 @@ public:
 
 	void monitor()
 	{
-        if (top->in_valid == 1){
-    		// 当驱动函数认为接收到了有效输入后, 创建一个transaction
-    		// 并将驱动函数的输出存储并传递给scoreboard
-    		// 下方函数功能为：将in_FIFO输入赋值到Monitor中
-    		dut_in_tx *tx = new dut_in_tx();
-    		tx->in_clk = top->in_clk;
-    		tx->gpio_in_1 = top->gpio_in_1;
-    		tx->gpio_in_2 = top->gpio_in_2;
-    		tx->gpio_in_3 = top->gpio_in_3;
+		if (top->in_valid == 1)
+		{
+			// 当驱动函数认为接收到了有效输入后, 创建一个transaction
+			// 并将驱动函数的输出存储并传递给scoreboard
+			// 下方函数功能为：将in_FIFO输入赋值到Monitor中
+			dut_in_tx *tx = new dut_in_tx();
+			tx->in_clk = top->in_clk;
+			tx->gpio_in_1 = top->gpio_in_1;
+			tx->gpio_in_2 = top->gpio_in_2;
+			tx->gpio_in_3 = top->gpio_in_3;
 
-    		scb->write_in(tx);
-	    }
+			scb->write_in(tx);
+		}
 	}
 };
 
@@ -172,54 +213,57 @@ public:
 
 	void monitor()
 	{
-        if(top->out_valid == 1){
-	    	// 当驱动函数认为接收到了有效输出后, 创建一个transaction
-	    	// 并将驱动函数的输出存储并传递给scoreboard
-	    	// 下方函数功能为：将out_FIFO输入赋值到Monitor中
-	    	dut_out_tx *tx = new dut_out_tx();
-	    	tx->gpio_out_1 = top->gpio_out_1;
-	    	tx->gpio_out_2 = top->gpio_out_2;
-	    	tx->led	= top->led;
-	    	tx->VGA_R = top->VGA_R;
-	    	tx->VGA_G = top->VGA_G;
-	    	tx->VGA_B = top->VGA_B;
-	    	tx->seg0 = top->seg0;
-	    	tx->seg1 = top->seg1;
-	    	tx->seg2 = top->seg2;
-	    	tx->seg3 = top->seg3;
-	    	tx->seg4 = top->seg4;
-	    	tx->seg5 = top->seg5;
-	    	tx->seg6 = top->seg6;
-	    	tx->seg7 = top->seg7;
+		if (top->out_valid == 1)
+		{
+			// 当驱动函数认为接收到了有效输出后, 创建一个transaction
+			// 并将驱动函数的输出存储并传递给scoreboard
+			// 下方函数功能为：将out_FIFO输入赋值到Monitor中
+			dut_out_tx *tx = new dut_out_tx();
+			tx->gpio_out_1 = top->gpio_out_1;
+			tx->gpio_out_2 = top->gpio_out_2;
+			tx->led = top->led;
+			tx->VGA_R = top->VGA_R;
+			tx->VGA_G = top->VGA_G;
+			tx->VGA_B = top->VGA_B;
+			tx->seg0 = top->seg0;
+			tx->seg1 = top->seg1;
+			tx->seg2 = top->seg2;
+			tx->seg3 = top->seg3;
+			tx->seg4 = top->seg4;
+			tx->seg5 = top->seg5;
+			tx->seg6 = top->seg6;
+			tx->seg7 = top->seg7;
 
-	    	scb->write_out(tx);
-        }
+			scb->write_out(tx);
+		}
 	}
 };
 
-void dut_reset(Vtop* top, vluint64_t &sim_time)
-{   
-    top->rst = 0;
-    if (sim_time > VERIF_START_TIME && sim_time < VERIF_START_TIME + 3){
-       top->rst = 1;
-       top->in_valid = 0;
-       top->in_clk = 0;
-       top->gpio_in_1 = 0;
-       top->gpio_in_2 = 0;
-       top->gpio_in_3 = 0;
-
-    }
-    
+void dut_reset(Vtop *top, vluint64_t &sim_time)
+{
+	top->rst = 0;
+	if (sim_time > VERIF_START_TIME && sim_time < VERIF_START_TIME + 3)
+	{
+		top->rst = 1;
+		top->in_valid = 0;
+		top->in_clk = 0;
+		top->gpio_in_1 = 0;
+		top->gpio_in_2 = 0;
+		top->gpio_in_3 = 0;
+	}
 }
 
-dut_in_tx* rnd_in_tx(){
-	if ( rand()%1 == 0 ){
+dut_in_tx *rnd_in_tx()
+{
+	if (rand() % 1 == 0)
+	{
 		dut_in_tx *tx = new dut_in_tx();
-        tx->gpio_in_1 = rand()%0xff; 
-
+		tx->gpio_in_1 = rand() % 0xff;
 
 		return tx;
-	} else return NULL;
+	}
+	else
+		return NULL;
 }
 
 int main(int argc, char const *argv[])
@@ -241,7 +285,8 @@ int main(int argc, char const *argv[])
 	dut_in_mon *inMon = new dut_in_mon(top, scb);
 	dut_out_mon *outMon = new dut_out_mon(top, scb);
 
-	while (sim_time < MAX_SIM_TIME){
+	while (sim_time < MAX_SIM_TIME)
+	{
 		dut_reset(top, sim_time);
 		top->clk ^= 1;
 		top->eval();
@@ -266,7 +311,7 @@ int main(int argc, char const *argv[])
 				// Monitor the output interface
 				outMon->monitor();
 			}
-            posedge_cnt++;
+			posedge_cnt++;
 		}
 		// end of positive edge processing
 

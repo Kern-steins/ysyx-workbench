@@ -24,6 +24,25 @@ module top #(
 	output [7:0] gpio_out_2
 
 );
+
+wire [7:0]	out_1;
+wire [7:0]	out_2;
+
+
+
+ps2 u_ps2(
+	//ports
+	.clk      		( clk      		),
+	.rst      		( rst      		),
+	.ps2_clk  		( ps2_clk  		),
+	.ps2_data 		( ps2_data 		),
+	.out_1    		( out_1    		),
+	.out_2    		( out_2    		)
+);
+
+
+
+
 /*
     wire empty;
     wire full;
