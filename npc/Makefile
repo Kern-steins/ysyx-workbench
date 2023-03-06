@@ -50,7 +50,7 @@ $(BIN): $(VSRC) $(TB_SRC)
 		--exe $(TB_SRC)
 .PHONY:lint
 lint: ./vsrc/$(MODULE).sv
-	verilator --lint-only ./vsrc/$(MODULE).sv
+	verilator --lint-only ./vsrc/$(MODULE).sv 
 
 .PHONY:main	
 main : $(MAIN_SRC)

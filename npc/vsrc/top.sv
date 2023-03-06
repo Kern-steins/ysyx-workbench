@@ -2,50 +2,30 @@ module top #(
 ) (
 	input clk,    // Clock
 	input rst,  // Asynchronous reset active low
-	input in_clk,
-	input in_valid,
-	output out_valid,
+	input in_clk(* unused *),
+	input in_valid(* unused *),
+	output out_valid(* unused *),
 	input [7:0] gpio_in_1,
-	input [7:0] gpio_in_2,
-	input [7:0] gpio_in_3,
-	output [15:0] led,
-	output [7:0] VGA_R,
-	output [7:0] VGA_G,
-	output [7:0] VGA_B,
-	output [7:0] seg0,
-	output [7:0] seg1,
-	output [7:0] seg2,
-	output [7:0] seg3,
-	output [7:0] seg4,
-	output [7:0] seg5,
-	output [7:0] seg6,
-	output [7:0] seg7,
+	input [7:0] gpio_in_2(* unused *),
+	input [7:0] gpio_in_3(* unused *),
+	output [15:0] led(* unused *),
+	output [7:0] VGA_R(* unused *),
+	output [7:0] VGA_G(* unused *),
+	output [7:0] VGA_B(* unused *),
+	output [7:0] seg0(* unused *),
+	output [7:0] seg1(* unused *),
+	output [7:0] seg2(* unused *),
+	output [7:0] seg3(* unused *),
+	output [7:0] seg4(* unused *),
+	output [7:0] seg5(* unused *),
+	output [7:0] seg6(* unused *),
+	output [7:0] seg7(* unused *),
 	output [7:0] gpio_out_1,
-	output [7:0] gpio_out_2
+	output [7:0] gpio_out_2(* unused *)
 
 );
 
-    wire in_clk_r = in_clk;
-    wire [7:0] gpio_in_2_r =gpio_in_2;
-    wire [7:0] gpio_in_3_r =gpio_in_3; 
-    
-    assign out_valid = 1'b0;
-    assign led = '0;
-    assign VGA_R = '0;
-    assign VGA_G = '0;
-    assign VGA_B = '0;
-    assign seg0 = '0;
-    assign seg1 = '0;
-    assign seg2 = '0;
-    assign seg3 = '0;
-    assign seg4 = '0;
-    assign seg5 = '0;
-    assign seg6 = '0;
-    assign seg7 = '0;
-    assign gpio_out_1 = '0;
-    assign gpio_out_2 = '0;
-
-
+/*
 	fifo #(
 			.DATA_WIDTH(8),
 			.DATA_DEPTH(16),
@@ -62,6 +42,6 @@ module top #(
 			.full    ()
 		);
 
-
+*/
 
 endmodule
