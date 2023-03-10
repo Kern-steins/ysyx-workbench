@@ -28,13 +28,15 @@ module top #(
 wire [7:0]	out_1;
 wire [7:0]	out_2;
 
-
+	assign seg0 = out_1;
+	assign seg1 = out_2;
+	wire	ps2_data = gpio_in_1[0];
 
 ps2 u_ps2(
 	//ports
 	.clk      		( clk      		),
 	.rst      		( rst      		),
-	.ps2_clk  		( ps2_clk  		),
+	.ps2_clk  		( in_clk		),
 	.ps2_data 		( ps2_data 		),
 	.out_1    		( out_1    		),
 	.out_2    		( out_2    		)

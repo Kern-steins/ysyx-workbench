@@ -26,21 +26,56 @@ public:
 	uint32_t gpio_in_2;
 	uint32_t gpio_in_3;
 	uint32_t exp_res();
+
 };
 
-class in_buf ::public dut_in_tx
+class in_buf : public dut_in_tx
 {
 public:
 	vluint64_t data_count;
 	vluint64_t time_count;
+	int  odd_check;
+	void act(Vtop* top);
 
 	in_buf()
 	{
 		this->data_count = 0;
 		this->time_count = 0;
+		this->odd_check = 0;
 	}
 	~in_buf()
 	{
+	}
+};
+
+void in_buf::act(Vtop *top)
+{
+	if (this->time_count++ == 10)
+	{
+		if (top->in_clk == 1)
+		{
+			if (this->data_count++ < 11)
+			{
+				if (this->data_count == 0)
+				{
+					top->gpio_in_1 = 0;
+					this->odd_check = 0;
+				}
+
+				if (this->data_count != 0 && this->data_count < 9)
+				{
+					top->gpio_in_1 = this->gpio_in_1 % 2;
+					this->odd_check ^= top->gpio_in_1;
+					this->gpio_in_1 = this->gpio_in_1 >> 1;
+				}
+				if (this->data_count == 9)
+				{
+					top->gpio_in_1 = this->odd_check;
+					delete this;
+				}
+			}
+		}
+		top->in_clk ^= 1;
 	}
 }
 
@@ -115,7 +150,7 @@ class dut_in_drv
 {
 private:
 	Vtop *top;
-	dut_in_tx *buf;
+	in_buf *buf;
 
 public:
 	dut_in_drv(Vtop *top)
@@ -126,6 +161,7 @@ public:
 	void drive(dut_in_tx *tx)
 	{
 		top->in_valid = 0;
+		top->gpio_in_1 = 1;
 
 		// 默认为输入为无效输入
 		// 当Transacter给出一个Transaction且操作数并不为空时
@@ -138,28 +174,7 @@ public:
 		}
 		if (buf != NULL)
 		{
-			if (buf->time_count++ == 10)
-			{
-				if (top->in_clk == 0)
-				{
-					if (buf->data_count < 11)
-					{
-						if (buf->data_count == 0)
-						{
-							top->gpio_in_1 = 0;
-						}
-
-						if (buf->data_count != 0 && buf->data_count < 9)
-						{
-							top->gpio_in_1 = buf->gpio_in_1 % 2;
-							buf->gpio_in_1 = buf->gpio_in_1 >> 1;
-						}
-
-						buf->data_count++;
-					}
-				}
-				top->in_clk ^= 1;
-			}
+			buf->act(top);
 			top->in_valid = 1;
 		}
 
