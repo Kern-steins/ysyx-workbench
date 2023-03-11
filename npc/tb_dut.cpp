@@ -20,325 +20,315 @@ vluint64_t posedge_cnt = 0;
 class dut_in_tx
 {
 public:
-	uint32_t in_clk;
-	// 3_gpio
-	uint32_t gpio_in_1;
-	uint32_t gpio_in_2;
-	uint32_t gpio_in_3;
-	uint32_t exp_res();
-
+    uint32_t in_clk;
+    // 3_gpio
+    uint32_t gpio_in_1;
+    uint32_t gpio_in_2;
+    uint32_t gpio_in_3;
+    uint32_t exp_res();
 };
 
 class in_buf : public dut_in_tx
 {
-public:
-	vluint64_t data_count;
-	vluint64_t time_count;
-	int  odd_check;
-	void act(Vtop* top);
+private:
+    int data_count;
+    int time_count;
+    int odd_check;
 
-	in_buf()
-	{
-		this->data_count = 0;
-		this->time_count = 0;
-		this->odd_check = 0;
-	}
-	~in_buf()
-	{
-	}
+public:
+    void act(Vtop *top);
+    int delete_flag;
+
+    in_buf()
+    {
+        this->data_count = 0;
+        this->time_count = 0;
+        this->odd_check = 0;
+        this->delete_flag = 0;
+    }
+    ~in_buf()
+    {
+    }
 };
 
 void in_buf::act(Vtop *top)
 {
-	if (this->time_count++ == 10)
-	{
-		if (top->in_clk == 1)
-		{
-			if (this->data_count++ < 11)
-			{
-				if (this->data_count == 0)
-				{
-					top->gpio_in_1 = 0;
-					this->odd_check = 0;
-				}
+    if (time_count++ == 10) {
+        time_count = 0;
 
-				if (this->data_count != 0 && this->data_count < 9)
-				{
-					top->gpio_in_1 = this->gpio_in_1 % 2;
-					this->odd_check ^= top->gpio_in_1;
-					this->gpio_in_1 = this->gpio_in_1 >> 1;
-				}
-				if (this->data_count == 9)
-				{
-					top->gpio_in_1 = this->odd_check;
-					delete this;
-				}
-			}
-		}
-		top->in_clk ^= 1;
-	}
+        if (top->in_clk == 1) {
+            if (data_count++ < 11) {
+                if (data_count == 0) {
+                    top->gpio_in_1 = 0;
+                    odd_check = 0;
+                }
+
+                if (data_count != 0 && data_count < 9) {
+                    top->gpio_in_1 = gpio_in_1 % 2;
+                    odd_check ^= top->gpio_in_1;
+                    gpio_in_1 = gpio_in_1 >> 1;
+                }
+
+                if (data_count == 9) {
+                    top->gpio_in_1 = odd_check;
+                    delete_flag = 1;
+                }
+            }
+        }
+
+        top->in_clk ^= 1;
+    }
 }
 
 uint32_t dut_in_tx::exp_res()
 {
 
-	return 0;
+    return 0;
 }
 
 class dut_out_tx
 {
 public:
-	uint32_t gpio_out_1;
-	uint32_t gpio_out_2;
-	uint32_t led;
-	uint32_t VGA_R;
-	uint32_t VGA_G;
-	uint32_t VGA_B;
-	uint32_t seg0;
-	uint32_t seg1;
-	uint32_t seg2;
-	uint32_t seg3;
-	uint32_t seg4;
-	uint32_t seg5;
-	uint32_t seg6;
-	uint32_t seg7;
-	uint32_t rel_res();
+    uint32_t gpio_out_1;
+    uint32_t gpio_out_2;
+    uint32_t led;
+    uint32_t VGA_R;
+    uint32_t VGA_G;
+    uint32_t VGA_B;
+    uint32_t seg0;
+    uint32_t seg1;
+    uint32_t seg2;
+    uint32_t seg3;
+    uint32_t seg4;
+    uint32_t seg5;
+    uint32_t seg6;
+    uint32_t seg7;
+    uint32_t rel_res();
 };
 
 uint32_t dut_out_tx::rel_res()
 {
 
-	return 0;
+    return 0;
 }
 
 class dut_scb
 {
 private:
-	// 定义了一个输入FIFO，用于以FIFO形式储存输入的变量
-	std::deque<dut_in_tx *> in_fifo;
+    // 定义了一个输入FIFO，用于以FIFO形式储存输入的变量
+    std::deque<dut_in_tx *> in_fifo;
 
 public:
-	// 将输入的数据写入FIFO和检测写出FIFO
-	void write_in(dut_in_tx *tx)
-	{
-		in_fifo.push_back(tx);
-	}
-	void write_out(dut_out_tx *tx)
-	{
-		if (in_fifo.empty())
-		{
-			std::cout << "Fatal Error in dut_scb: "
-					  << "empty dut_in_tx queue" << std::endl;
-			exit(1);
-		}
+    // 将输入的数据写入FIFO和检测写出FIFO
+    void write_in(dut_in_tx *tx)
+    {
+        in_fifo.push_back(tx);
+    }
+    void write_out(dut_out_tx *tx)
+    {
+        if (in_fifo.empty()) {
+            std::cout << "Fatal Error in dut_scb: "
+                      << "empty dut_in_tx queue" << std::endl;
+            exit(1);
+        }
 
-		dut_in_tx *in;
-		in = in_fifo.front();
-		in_fifo.pop_front();
+        dut_in_tx *in;
+        in = in_fifo.front();
+        in_fifo.pop_front();
 
-		if (in->exp_res() != tx->rel_res())
-		{
-			/* code */
-		}
+        if (in->exp_res() != tx->rel_res()) {
+            /* code */
+        }
 
-		delete in;
-		delete tx;
-	}
+        delete in;
+        delete tx;
+    }
 };
 
 class dut_in_drv
 {
 private:
-	Vtop *top;
-	in_buf *buf;
+    Vtop *top;
 
 public:
-	dut_in_drv(Vtop *top)
-	{
-		this->top = top;
-	}
+    dut_in_drv(Vtop *top)
+    {
+        this->top = top;
+    }
 
-	void drive(dut_in_tx *tx)
-	{
-		top->in_valid = 0;
-		top->gpio_in_1 = 1;
+    void drive(dut_in_tx *tx)
+    {
+        top->in_valid = 0;
 
-		// 默认为输入为无效输入
-		// 当Transacter给出一个Transaction且操作数并不为空时
-		// 认为当前输入为有效输入，in_valid置1
-		// 下方函数功能为：将FIFO输入与实例top的接口连接
-		if (tx != NULL && buf == NULL)
-		{
-			buf = new in_buf();
-			buf->gpio_in_1 = tx->gpio_in_1;
-		}
-		if (buf != NULL)
-		{
-			buf->act(top);
+        // 默认为输入为无效输入
+        // 当Transacter给出一个Transaction且操作数并不为空时
+        // 认为当前输入为有效输入，in_valid置1
+        // 下方函数功能为：将FIFO输入与实例top的接口连接
+        if (tx != nullptr) {
 			top->in_valid = 1;
+			top->in_clk = tx->in_clk;
+			top->gpio_in_1 = tx->gpio_in_1;
+			top->gpio_in_2 = tx->gpio_in_2;
+			top->gpio_in_3 = tx->gpio_in_3;
+			
+        	delete tx;
 		}
 
-		delete tx;
-	}
+    }
 };
 
 class dut_in_mon
 {
 private:
-	Vtop *top;
-	dut_scb *scb;
+    Vtop *top;
+    dut_scb *scb;
 
 public:
-	dut_in_mon(Vtop *top, dut_scb *scb)
-	{
-		this->top = top;
-		this->scb = scb;
-	}
+    dut_in_mon(Vtop *top, dut_scb *scb)
+    {
+        this->top = top;
+        this->scb = scb;
+    }
 
-	void monitor()
-	{
-		if (top->in_valid == 1)
-		{
-			// 当驱动函数认为接收到了有效输入后, 创建一个transaction
-			// 并将驱动函数的输出存储并传递给scoreboard
-			// 下方函数功能为：将in_FIFO输入赋值到Monitor中
-			dut_in_tx *tx = new dut_in_tx();
-			tx->in_clk = top->in_clk;
-			tx->gpio_in_1 = top->gpio_in_1;
-			tx->gpio_in_2 = top->gpio_in_2;
-			tx->gpio_in_3 = top->gpio_in_3;
+    void monitor()
+    {
+        if (top->in_valid == 1) {
+            // 当驱动函数认为接收到了有效输入后, 创建一个transaction
+            // 并将驱动函数的输出存储并传递给scoreboard
+            // 下方函数功能为：将in_FIFO输入赋值到Monitor中
+            dut_in_tx *tx = new dut_in_tx();
+            tx->in_clk = top->in_clk;
+            tx->gpio_in_1 = top->gpio_in_1;
+            tx->gpio_in_2 = top->gpio_in_2;
+            tx->gpio_in_3 = top->gpio_in_3;
 
-			scb->write_in(tx);
-		}
-	}
+            scb->write_in(tx);
+        }
+    }
 };
 
 class dut_out_mon
 {
 private:
-	Vtop *top;
-	dut_scb *scb;
+    Vtop *top;
+    dut_scb *scb;
 
 public:
-	dut_out_mon(Vtop *top, dut_scb *scb)
-	{
-		this->top = top;
-		this->scb = scb;
-	}
+    dut_out_mon(Vtop *top, dut_scb *scb)
+    {
+        this->top = top;
+        this->scb = scb;
+    }
 
-	void monitor()
-	{
-		if (top->out_valid == 1)
-		{
-			// 当驱动函数认为接收到了有效输出后, 创建一个transaction
-			// 并将驱动函数的输出存储并传递给scoreboard
-			// 下方函数功能为：将out_FIFO输入赋值到Monitor中
-			dut_out_tx *tx = new dut_out_tx();
-			tx->gpio_out_1 = top->gpio_out_1;
-			tx->gpio_out_2 = top->gpio_out_2;
-			tx->led = top->led;
-			tx->VGA_R = top->VGA_R;
-			tx->VGA_G = top->VGA_G;
-			tx->VGA_B = top->VGA_B;
-			tx->seg0 = top->seg0;
-			tx->seg1 = top->seg1;
-			tx->seg2 = top->seg2;
-			tx->seg3 = top->seg3;
-			tx->seg4 = top->seg4;
-			tx->seg5 = top->seg5;
-			tx->seg6 = top->seg6;
-			tx->seg7 = top->seg7;
+    void monitor()
+    {
+        if (top->out_valid == 1) {
+            // 当驱动函数认为接收到了有效输出后, 创建一个transaction
+            // 并将驱动函数的输出存储并传递给scoreboard
+            // 下方函数功能为：将out_FIFO输入赋值到Monitor中
+            dut_out_tx *tx = new dut_out_tx();
+            tx->gpio_out_1 = top->gpio_out_1;
+            tx->gpio_out_2 = top->gpio_out_2;
+            tx->led = top->led;
+            tx->VGA_R = top->VGA_R;
+            tx->VGA_G = top->VGA_G;
+            tx->VGA_B = top->VGA_B;
+            tx->seg0 = top->seg0;
+            tx->seg1 = top->seg1;
+            tx->seg2 = top->seg2;
+            tx->seg3 = top->seg3;
+            tx->seg4 = top->seg4;
+            tx->seg5 = top->seg5;
+            tx->seg6 = top->seg6;
+            tx->seg7 = top->seg7;
 
-			scb->write_out(tx);
-		}
-	}
+            scb->write_out(tx);
+        }
+    }
 };
 
 void dut_reset(Vtop *top, vluint64_t &sim_time)
 {
-	top->rst = 0;
-	if (sim_time > VERIF_START_TIME && sim_time < VERIF_START_TIME + 3)
-	{
-		top->rst = 1;
-		top->in_valid = 0;
-		top->in_clk = 0;
-		top->gpio_in_1 = 0;
-		top->gpio_in_2 = 0;
-		top->gpio_in_3 = 0;
-	}
+    top->rst = 0;
+
+    if (sim_time > VERIF_START_TIME && sim_time < VERIF_START_TIME + 3) {
+        top->rst = 1;
+        top->in_valid = 0;
+        top->in_clk = 0;
+        top->gpio_in_1 = 0;
+        top->gpio_in_2 = 0;
+        top->gpio_in_3 = 0;
+    }
 }
 
 dut_in_tx *rnd_in_tx()
 {
-	if (rand() % 1 == 0)
-	{
-		dut_in_tx *tx = new dut_in_tx();
-		tx->gpio_in_1 = rand() % 0xff;
+    if (rand() % 100 == 0) {
+        dut_in_tx *tx = new dut_in_tx();
+        tx->gpio_in_1 = rand() % 0xff;
 
-		return tx;
-	}
-	else
-		return NULL;
+        return tx;
+    } else
+        return NULL;
 }
 
 int main(int argc, char const *argv[])
 {
-	srand(time(NULL));
-	Verilated::commandArgs(argc, argv);
-	Vtop *top = new Vtop;
+    srand(time(NULL));
+    Verilated::commandArgs(argc, argv);
+    Vtop *top = new Vtop;
 
-	Verilated::traceEverOn(true);
-	VerilatedVcdC *m_trace = new VerilatedVcdC;
-	top->trace(m_trace, 5);
-	m_trace->open("waveform.vcd");
+    Verilated::traceEverOn(true);
+    VerilatedVcdC *m_trace = new VerilatedVcdC;
+    top->trace(m_trace, 5);
+    m_trace->open("waveform.vcd");
 
-	dut_in_tx *tx;
+    dut_in_tx *tx;
 
-	// Here we create the driver, scoreboard, input and output monitor blocks
-	dut_in_drv *drv = new dut_in_drv(top);
-	dut_scb *scb = new dut_scb();
-	dut_in_mon *inMon = new dut_in_mon(top, scb);
-	dut_out_mon *outMon = new dut_out_mon(top, scb);
+    // Here we create the driver, scoreboard, input and output monitor blocks
+    dut_in_drv *drv = new dut_in_drv(top);
+    dut_scb *scb = new dut_scb();
+    dut_in_mon *inMon = new dut_in_mon(top, scb);
+    dut_out_mon *outMon = new dut_out_mon(top, scb);
 
-	while (sim_time < MAX_SIM_TIME)
-	{
-		dut_reset(top, sim_time);
-		top->clk ^= 1;
-		top->eval();
+    while (sim_time < MAX_SIM_TIME) {
+        dut_reset(top, sim_time);
+        top->clk ^= 1;
+        top->eval();
 
-		// Do all the driving/monitoring on a positive edge
-		if (top->clk == 1)
-		{
+        // Do all the driving/monitoring on a positive edge
+        if (top->clk == 1) {
 
-			if (sim_time >= VERIF_START_TIME)
-			{
-				// Generate a randomised transaction item of type topInTx
-				tx = rnd_in_tx();
+            if (sim_time >= VERIF_START_TIME) {
+                // Generate a randomised transaction item of type topInTx
+                tx = rnd_in_tx();
 
-				// Pass the transaction item to the top input interface driver,
-				// which drives the input interface based on the info in the
-				// transaction item
-				drv->drive(tx);
+                // Pass the transaction item to the top input interface driver,
+                // which drives the input interface based on the info in the
+                // transaction item
+                drv->drive(tx);
 
-				// Monitor the input interface
-				inMon->monitor();
+                // Monitor the input interface
+                inMon->monitor();
 
-				// Monitor the output interface
-				outMon->monitor();
-			}
-			posedge_cnt++;
-		}
-		// end of positive edge processing
+                // Monitor the output interface
+                outMon->monitor();
+            }
 
-		m_trace->dump(sim_time);
-		sim_time++;
-	}
+            posedge_cnt++;
+        }
 
-	m_trace->close();
-	delete top;
-	delete outMon;
-	delete inMon;
-	delete scb;
-	delete drv;
-	exit(EXIT_SUCCESS);
+        // end of positive edge processing
+
+        m_trace->dump(sim_time);
+        sim_time++;
+    }
+
+    m_trace->close();
+    delete top;
+    delete outMon;
+    delete inMon;
+    delete scb;
+    delete drv;
+    exit(EXIT_SUCCESS);
 }
