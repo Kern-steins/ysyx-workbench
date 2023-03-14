@@ -34,7 +34,6 @@ module top #(
     logic series_out;
 
 
-    /*
     wire [7:0] out_1;
     wire [7:0] out_2;
 
@@ -52,8 +51,7 @@ module top #(
         .out_2   (out_2)
     );
 
-    */
-
+/*
     wire empty;
     wire full;
 
@@ -74,6 +72,6 @@ module top #(
          );
 
     assign out_valid = ~empty;
-
+*/
 endmodule
 

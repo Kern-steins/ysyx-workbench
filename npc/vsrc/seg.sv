@@ -30,7 +30,8 @@ typedef enum logic [8-1:0] {
 	seg_c_p = 8'b0100_0110,
 	seg_d_p = 8'b0010_0001,
 	seg_e_p = 8'b0000_0110,
-	seg_f_p = 8'b0000_1110
+	seg_f_p = 8'b0000_1110,
+	seg_default = 8'hff
 }op_seg;
 
 module seg #(
@@ -77,12 +78,12 @@ module seg #(
 				5'h1c: out_1 = seg_c_p;
 				5'h1d: out_1 = seg_d_p;
 				5'h1e: out_1 = seg_e_p;
-				default : out_1 = '0;
+				default : out_1 = seg_default;
 			endcase
             out_valid = 1'b1;
 		end else begin
 			out_valid = 1'b0;
-			out_1 = '0;
+			out_1 = seg_default;
 		end
 	end
 

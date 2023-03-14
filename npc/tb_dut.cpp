@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <memory>
+#include <ctime>
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
@@ -93,49 +94,113 @@ public:
     }
 };
 
-#define MAX_COUNT 8
 
 class dut_in_drv
 {
 private:
     Vtop *top;
-    int count ;
+    int data_count = 0;
+    int time_count = 0;
+    int in_clk = 0;
+    int temp_data = 0;
+    int odd = 1;
 
 public:
-    dut_in_drv(Vtop *top):count(0)
+    dut_in_drv(Vtop *top)
     {
         this->top = top;
     }
 
-    void drive(dut_in_tx *&tx)
-    {
-        top->in_valid = 0;
+    void drive(dut_in_tx *&tx);
 
-        // 默认为输入为无效输入
-        // 当Transacter给出一个Transaction且操作数并不为空时
-        // 认为当前输入为有效输入，in_valid置1
-        // 下方函数功能为：将FIFO输入与实例top的接口连接
-        if (tx != nullptr) {
-            top->in_valid = 1;
-            top->in_clk = tx->in_clk;
-            top->gpio_in_2 = tx->gpio_in_1;
-            top->gpio_in_3 = tx->gpio_in_3;
+    void drive( dut_in_tx *&tx, uint32_t max_data_count,
+                uint32_t max_time_count);
 
-            if (count < MAX_COUNT) {
-                int temp_gpio = tx->gpio_in_1;
-                top->gpio_in_3 = count;
-                top->gpio_in_1 = (temp_gpio >> count)%2;
-                count ++ ;
+};
 
-                if (count == MAX_COUNT) {
-                    count = 0;
-                    delete tx;
-                    tx = nullptr;
+void dut_in_drv::drive(dut_in_tx *&tx)
+{
+    top->in_valid = 0;
+
+    // 默认为输入为无效输入
+    // 当Transacter给出一个Transaction且操作数并不为空时
+    // 认为当前输入为有效输入，in_valid置1
+    // 下方函数功能为：将FIFO输入与实例top的接口连接
+    if (tx != nullptr) {
+
+        top->in_valid = 1;
+        top->in_clk = tx->in_clk;
+        top->gpio_in_1 = tx->gpio_in_1;
+        top->gpio_in_2 = tx->gpio_in_2;
+        top->gpio_in_3 = tx->gpio_in_3;
+
+        delete tx;
+        tx = nullptr;
+    }
+}
+
+void dut_in_drv::drive(dut_in_tx *&tx, uint32_t max_data_count, uint32_t max_time_count)
+{
+    top->in_valid = 0;
+    top->in_clk = 1;
+    top->gpio_in_1 = 1;
+
+    // 默认为输入为无效输入
+    // 当Transacter给出一个Transaction且操作数并不为空时
+    // 认为当前输入为有效输入，in_valid置1
+    // 下方函数功能为：将FIFO输入与实例top的接口连接
+    if (tx != nullptr) {
+
+        top->in_valid = 1;
+        top->in_clk = this->in_clk;
+        top->gpio_in_1 = this->temp_data;
+        top->gpio_in_2 = tx->gpio_in_1;
+
+        if (this->time_count++ == max_time_count - 1) {
+            this->time_count = 0;
+            this->in_clk ^= 1;
+            top->in_clk = this->in_clk;
+
+            if (top->in_clk == 1) {
+                if (data_count < max_data_count + 3) {
+                    if (data_count == 0) {
+                        top->gpio_in_1 = 0;
+                    }
+
+                    if (data_count > 0 && data_count < max_data_count + 1) {
+                        int temp_gpio = tx->gpio_in_1;
+                        top->gpio_in_1 = (temp_gpio >> (data_count-1))%2;
+                        this->odd ^= top->gpio_in_1;
+                    }
+
+                    if (data_count == max_data_count + 1) {
+                        top->gpio_in_1 = this->odd;
+                    }
+
+                    this->temp_data = top->gpio_in_1;
+                    top->gpio_in_3 = this->data_count;
+
+                    if (data_count > max_data_count + 1) {
+                        this->temp_data = 0;
+                        this->data_count = 0;
+                        this->time_count = 0;
+                        this->in_clk = 0;
+                        this->odd = 1;
+                        top->gpio_in_3 = this->data_count;
+                        delete tx;
+                        tx = nullptr;
+                        return;
+                        /* code */
+                    }
+
+                    data_count ++;
+
                 }
             }
         }
     }
-};
+}
+
 
 class dut_in_mon
 {
@@ -269,7 +334,7 @@ int main(int argc, char const *argv[])
                 // Pass the transaction item to the top input interface driver,
                 // which drives the input interface based on the info in the
                 // transaction item
-                drv->drive(tx);
+                drv->drive(tx,8,3);
 
                 // Monitor the input interface
                 inMon->monitor();
