@@ -10,7 +10,7 @@
 // TIME_REFER表示每次跑基数，1000_000为us
 #define TIME_REFER 1000
 // MAX_TIME表示要跑多少，例如100就是100us
-#define MAX_TIME 1
+#define MAX_TIME 10
 #define MAX_SIM_TIME ((MAX_TIME) * (TIME_REFER))
 #define VERIF_START_TIME 7
 
@@ -27,58 +27,6 @@ public:
     uint32_t gpio_in_3;
     uint32_t exp_res();
 };
-
-class in_buf : public dut_in_tx
-{
-private:
-    int data_count;
-    int time_count;
-    int odd_check;
-
-public:
-    void act(Vtop *top);
-    int delete_flag;
-
-    in_buf()
-    {
-        this->data_count = 0;
-        this->time_count = 0;
-        this->odd_check = 0;
-        this->delete_flag = 0;
-    }
-    ~in_buf()
-    {
-    }
-};
-
-void in_buf::act(Vtop *top)
-{
-    if (time_count++ == 10) {
-        time_count = 0;
-
-        if (top->in_clk == 1) {
-            if (data_count++ < 11) {
-                if (data_count == 0) {
-                    top->gpio_in_1 = 0;
-                    odd_check = 0;
-                }
-
-                if (data_count != 0 && data_count < 9) {
-                    top->gpio_in_1 = gpio_in_1 % 2;
-                    odd_check ^= top->gpio_in_1;
-                    gpio_in_1 = gpio_in_1 >> 1;
-                }
-
-                if (data_count == 9) {
-                    top->gpio_in_1 = odd_check;
-                    delete_flag = 1;
-                }
-            }
-        }
-
-        top->in_clk ^= 1;
-    }
-}
 
 uint32_t dut_in_tx::exp_res()
 {
@@ -145,18 +93,21 @@ public:
     }
 };
 
+#define MAX_COUNT 8
+
 class dut_in_drv
 {
 private:
     Vtop *top;
+    int count ;
 
 public:
-    dut_in_drv(Vtop *top)
+    dut_in_drv(Vtop *top):count(0)
     {
         this->top = top;
     }
 
-    void drive(dut_in_tx *tx)
+    void drive(dut_in_tx *&tx)
     {
         top->in_valid = 0;
 
@@ -165,15 +116,24 @@ public:
         // 认为当前输入为有效输入，in_valid置1
         // 下方函数功能为：将FIFO输入与实例top的接口连接
         if (tx != nullptr) {
-			top->in_valid = 1;
-			top->in_clk = tx->in_clk;
-			top->gpio_in_1 = tx->gpio_in_1;
-			top->gpio_in_2 = tx->gpio_in_2;
-			top->gpio_in_3 = tx->gpio_in_3;
-			
-        	delete tx;
-		}
+            top->in_valid = 1;
+            top->in_clk = tx->in_clk;
+            top->gpio_in_2 = tx->gpio_in_1;
+            top->gpio_in_3 = tx->gpio_in_3;
 
+            if (count < MAX_COUNT) {
+                int temp_gpio = tx->gpio_in_1;
+                top->gpio_in_3 = count;
+                top->gpio_in_1 = (temp_gpio >> count)%2;
+                count ++ ;
+
+                if (count == MAX_COUNT) {
+                    count = 0;
+                    delete tx;
+                    tx = nullptr;
+                }
+            }
+        }
     }
 };
 
@@ -283,7 +243,7 @@ int main(int argc, char const *argv[])
     top->trace(m_trace, 5);
     m_trace->open("waveform.vcd");
 
-    dut_in_tx *tx;
+    dut_in_tx *tx = nullptr;
 
     // Here we create the driver, scoreboard, input and output monitor blocks
     dut_in_drv *drv = new dut_in_drv(top);
@@ -301,7 +261,10 @@ int main(int argc, char const *argv[])
 
             if (sim_time >= VERIF_START_TIME) {
                 // Generate a randomised transaction item of type topInTx
-                tx = rnd_in_tx();
+                if (tx == nullptr) {
+                    tx = rnd_in_tx();
+                }
+
 
                 // Pass the transaction item to the top input interface driver,
                 // which drives the input interface based on the info in the
