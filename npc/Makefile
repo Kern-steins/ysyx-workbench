@@ -12,7 +12,7 @@ TB_SRC = $(shell find $(abspath .) -name "tb*.cpp")
 EMPTY=
 
 VERILATOR = verilator
-VERILATOR_CFLAGS += -MMD --build -cc \
+VERILATOR_CFLAGS += -MMD --build -cc --timing \
 					-O3 --trace --x-assign fast \
 					--x-initial fast --noassert 
 

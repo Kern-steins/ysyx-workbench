@@ -42,36 +42,58 @@ module top #(
     wire ps2_data = gpio_in_1[0];
 
     ps2 u_ps2 (
-        //ports
-        .clk     (clk),
-        .rst     (rst),
-        .ps2_clk (in_clk),
-        .ps2_data(ps2_data),
-        .out_1   (out_1),
-        .out_2   (out_2)
-    );
+            //ports
+            .clk     (clk),
+            .rst     (rst),
+            .ps2_clk (in_clk),
+            .ps2_data(ps2_data),
+            .out_1   (out_1),
+            .out_2   (out_2)
+        );
 
+    /*
+        wire empty;
+        wire full;
+     
+        fifo #(
+                 .DATA_WIDTH(8),
+                 .DATA_DEPTH(16),
+                 .ADDR_WIDTH(4)
+             ) inst_fifo (
+                 .rst     (rst),
+                 .wr_clk  (clk),
+                 .rd_clk  (clk),
+                 .wr_en   (in_valid),
+                 .rd_en   (1'b1),
+                 .wr_data (gpio_in_1),
+                 .rd_data (gpio_out_1),
+                 .empty   (empty),
+                 .full    (full)
+             );
+     
+        assign out_valid = ~empty;
+    */
 /*
-    wire empty;
-    wire full;
+ //   always #5 clk_test = ~clk_test;
+    initial begin
+        clk_test = 1'b0;
+        series_out = 1'b0;
+//        #20;
+        for (int j = 0; j < 8 ; j++ ) begin
+            @(posedge clk_test);
+            series(8'hc5, series_out);
+        end
 
-    fifo #(
-             .DATA_WIDTH(8),
-             .DATA_DEPTH(16),
-             .ADDR_WIDTH(4)
-         ) inst_fifo (
-             .rst     (rst),
-             .wr_clk  (clk),
-             .rd_clk  (clk),
-             .wr_en   (in_valid),
-             .rd_en   (1'b1),
-             .wr_data (gpio_in_1),
-             .rd_data (gpio_out_1),
-             .empty   (empty),
-             .full    (full)
-         );
+    end
 
-    assign out_valid = ~empty;
+    task static series(input [7:0] in, output series_out);
+        static integer i = 0;
+        series_out = in[i];
+        i = i + 1;
+
+    endtask //
 */
+
+
 endmodule
 
