@@ -101,7 +101,7 @@ private:
     Vtop *top;
     int data_count = 0;
     int time_count = 0;
-    int in_clk = 0;
+    int in_clk = 1;
     int temp_data = 0;
     int odd = 1;
 
@@ -162,40 +162,34 @@ void dut_in_drv::drive(dut_in_tx *&tx, uint32_t max_data_count, uint32_t max_tim
             top->in_clk = this->in_clk;
 
             if (top->in_clk == 1) {
-                if (data_count < max_data_count + 3) {
-                    if (data_count == 0) {
-                        top->gpio_in_1 = 0;
-                    }
-
-                    if (data_count > 0 && data_count < max_data_count + 1) {
+                if (data_count < max_data_count + 2) {
+                    if (data_count < max_data_count ) {
                         int temp_gpio = tx->gpio_in_1;
-                        top->gpio_in_1 = (temp_gpio >> (data_count-1))%2;
+                        top->gpio_in_1 = (temp_gpio >> (data_count))%2;
                         this->odd ^= top->gpio_in_1;
                     }
 
-                    if (data_count == max_data_count + 1) {
+                    if (data_count == max_data_count ) {
                         top->gpio_in_1 = this->odd;
+                    }
+
+                    if (data_count == max_data_count + 1) {
+                        top->gpio_in_3 = this->data_count;
+                        top->gpio_in_1 = 1;
                     }
 
                     this->temp_data = top->gpio_in_1;
                     top->gpio_in_3 = this->data_count;
-
-                    if (data_count > max_data_count + 1) {
-                        this->temp_data = 0;
-                        this->data_count = 0;
-                        this->time_count = 0;
-                        this->in_clk = 0;
-                        this->odd = 1;
-                        top->gpio_in_3 = this->data_count;
-                        delete tx;
-                        tx = nullptr;
-                        return;
-                        /* code */
-                    }
-
                     data_count ++;
-
+                } else {
+                    this->temp_data = 0;
+                    this->data_count = 0;
+                    this->in_clk = 1;
+                    this->odd = 1;
+                    delete tx;
+                    tx = nullptr;
                 }
+
             }
         }
     }
@@ -288,7 +282,7 @@ void dut_reset(Vtop *top, vluint64_t &sim_time)
 
 dut_in_tx *rnd_in_tx()
 {
-    if (rand() % 100 == 0) {
+    if (rand() % 1000 == 0) {
         dut_in_tx *tx = new dut_in_tx();
         tx->gpio_in_1 = rand() % 0xff;
 
@@ -334,7 +328,7 @@ int main(int argc, char const *argv[])
                 // Pass the transaction item to the top input interface driver,
                 // which drives the input interface based on the info in the
                 // transaction item
-                drv->drive(tx,8,3);
+                drv->drive(tx,8,6);
 
                 // Monitor the input interface
                 inMon->monitor();
